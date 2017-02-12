@@ -183,7 +183,7 @@ class SubsonicApi():
         return [self.raw_artist_to_ref(artist) for artist in self.get_raw_artists()]
 
     def get_rootdirs_as_refs(self):
-        return [self.raw_directory_to_ref(rootdir, is_rootdir=True) for rootdir in self.get_raw_rootdirs()]
+        return [self.raw_directory_to_ref(rootdir) for rootdir in self.get_raw_rootdirs()]
 
     def get_diritems_as_refs(self, directory_id):
         return [(self.raw_directory_to_ref(diritem) if diritem.get('isDir') else self.raw_song_to_ref(diritem)) for diritem in self.get_raw_dir(directory_id)]
@@ -249,11 +249,11 @@ class SubsonicApi():
                 name=album.get('artist'),
                 uri=uri.get_artist_uri(album.get('artistId')))])
 
-    def raw_directory_to_ref(self, directory, is_rootdir=False):
+    def raw_directory_to_ref(self, directory):
         if directory is None:
             return None
         return Ref.directory(
-            name=directory.get('name' if is_rootdir else 'title'),
+            name=directory.get('title') or directory.get('name'),
             uri=uri.get_directory_uri(directory.get('id')))
 
     def raw_artist_to_ref(self, artist):
