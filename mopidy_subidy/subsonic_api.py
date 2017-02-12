@@ -47,7 +47,7 @@ class SubsonicApi():
 
     def find_raw(self, query, exclude_artists=False, exclude_albums=False, exclude_songs=False):
         try:
-            response = self.connection.search2(
+            response = self.connection.search3(
                 query.encode('utf-8'),
                 MAX_SEARCH_RESULTS if not exclude_artists else 0, 0,
                 MAX_SEARCH_RESULTS if not exclude_albums else 0, 0,
@@ -69,7 +69,6 @@ class SubsonicApi():
             artists=[self.raw_artist_to_artist(artist) for artist in result.get('artist') or []],
             albums=[self.raw_album_to_album(album) for album in result.get('album') or []],
             tracks=[self.raw_song_to_track(song) for song in result.get('song') or []])
-
 
     def get_raw_rootdirs(self):
         try:
@@ -164,7 +163,18 @@ class SubsonicApi():
         return self.get_raw_dir(artist_id)
 
     def get_raw_songs(self, album_id):
-        return self.get_raw_dir(album_id)
+        try:
+            response = self.connection.getAlbum(album_id)
+        except Exception as e:
+            logger.warning('Connecting to subsonic failed when loading list of songs in album.')
+            return []
+        if response.get('status') != RESPONSE_OK:
+            logger.warning('Got non-okay status code from subsonic: %s' % response.get('status'))
+            return []
+        songs = response.get('album').get('song')
+        if songs is not None:
+            return songs
+        return []
 
     def get_albums_as_refs(self, artist_id):
         return [self.raw_album_to_ref(album) for album in self.get_raw_albums(artist_id)]
