@@ -72,7 +72,7 @@ class SubsonicApi():
             tracks=[self.raw_song_to_track(song) for song in result.get('song') or []])
 
 
-    def get_raw_artists(self):
+    def get_raw_rootdirs(self):
         try:
             response = self.connection.getIndexes()
         except Exception as e:
@@ -182,6 +182,12 @@ class SubsonicApi():
     def get_artists_as_refs(self):
         return [self.raw_artist_to_ref(artist) for artist in self.get_raw_artists()]
 
+    def get_rootdirs_as_refs(self):
+        return [self.raw_directory_to_ref(rootdir, is_rootdir=True) for rootdir in self.get_raw_rootdirs()]
+
+    def get_diritems_as_refs(self, directory_id):
+        return [(self.raw_directory_to_ref(diritem) if diritem.get('isDir') else self.raw_song_to_ref(diritem)) for diritem in self.get_raw_dir(directory_id)]
+
     def get_artists_as_artists(self):
         return [self.raw_artist_to_artist(artist) for artist in self.get_raw_artists()]
 
@@ -242,6 +248,13 @@ class SubsonicApi():
             artists=[Artist(
                 name=album.get('artist'),
                 uri=uri.get_artist_uri(album.get('artistId')))])
+
+    def raw_directory_to_ref(self, directory, is_rootdir=False):
+        if directory is None:
+            return None
+        return Ref.directory(
+            name=directory.get('name' if is_rootdir else 'title'),
+            uri=uri.get_directory_uri(directory.get('id')))
 
     def raw_artist_to_ref(self, artist):
         if artist is None:
