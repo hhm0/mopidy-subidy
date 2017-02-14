@@ -79,3 +79,23 @@ class SubidyLibraryProvider(backend.LibraryProvider):
             return self.search_uri(query.get('uri')[0])
         if 'any' in query:
             return self.subsonic_api.find_as_search_result(query.get('any')[0])
+
+    def get_coverart_image(self, a_uri):
+        utype = uri.get_type(a_uri)
+        if utype == uri.ARTIST:
+            coverart_item_id = self.subsonic_api.coverart_item_id_by_artist_id(uri.get_artist_id(a_uri))
+        elif utype == uri.ALBUM:
+            coverart_item_id = self.subsonic_api.coverart_item_id_by_album_id(uri.get_album_id(a_uri))
+        elif utype == uri.SONG:
+            coverart_item_id = self.subsonic_api.coverart_item_id_by_song_id(uri.get_song_id(a_uri))
+        elif utype == uri.DIRECTORY:
+            coverart_item_id = self.subsonic_api.coverart_item_id_by_directory_id(uri.get_directory_id(a_uri))
+        else:
+            return []
+        if coverart_item_id is not None:
+            return [self.subsonic_api.get_coverart_image_by_id(coverart_item_id)]
+        else:
+            return []
+
+    def get_images(self, uris):
+        return dict((a_uri, self.get_coverart_image(a_uri)) for a_uri in uris)
