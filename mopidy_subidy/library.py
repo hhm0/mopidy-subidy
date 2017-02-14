@@ -96,7 +96,11 @@ class SubidyLibraryProvider(backend.LibraryProvider):
         else:
             return []
         if coverart_item_id is not None:
-            return [self.subsonic_api.get_coverart_image_by_id(coverart_item_id)]
+            image_uri = self.subsonic_api.get_coverart_image_by_id(coverart_item_id)
+            if image_uri is not None:
+                return [image_uri]
+            else:
+                return []
         else:
             return []
 

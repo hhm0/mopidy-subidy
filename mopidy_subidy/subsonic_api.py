@@ -128,10 +128,11 @@ class SubsonicApi():
             return None
         return self.raw_artist_to_artist(response.get('artist')) if response.get('artist') is not None else None
 
-    def get_coverart_image_by_id(self, aid):
-        censored_url = self.get_censored_coverart_image_uri(aid)
+    def get_coverart_image_by_id(self, a_id):
+        censored_url = self.get_censored_coverart_image_uri(a_id)
         logger.debug("Loading cover art from subsonic with url: '%s'" % censored_url)
-        return self.raw_imageuri_to_image(self.get_coverart_image_uri(aid))
+        url = self.get_coverart_image_uri(a_id)
+        return self.raw_imageuri_to_image(url)
 
     def get_raw_playlists(self):
         try:
@@ -359,19 +360,39 @@ class SubsonicApi():
             uri=imageuri)
 
     def coverart_item_id_by_song_id(self, song_id):
-        return self.get_raw_song(song_id).get('coverArt')
+        coverart_item_id = self.get_raw_song(song_id)
+        if coverart_item_id is not None:
+            return coverart_item_id.get('coverArt')
+        else:
+            return None
 
     def coverart_item_id_by_album_id(self, album_id):
-        return self.get_raw_album(album_id).get('coverArt')
+        coverart_item_id = self.get_raw_album(album_id)
+        if coverart_item_id is not None:
+            return coverart_item_id.get('coverArt')
+        else:
+            return None
 
     def coverart_item_id_by_artist_id(self, artist_id):
-        return self.get_raw_artist(artist_id).get('coverArt')
+        coverart_item_id = self.get_raw_artist(artist_id)
+        if coverart_item_id is not None:
+            return coverart_item_id.get('coverArt')
+        else:
+            return None
 
     def coverart_item_id_by_directory_id(self, directory_id):
-        parentdir_id = self.get_raw_dirinfo(directory_id).get('parent')
-        if parentdir_id is not None:
-            parentdiritems = self.get_raw_dir(parentdir_id)
-            diritem = dict((d['id'], d) for d in parentdiritems).get(directory_id)
-            return diritem.get('coverArt')
+        # FIXME: may take long when directory_id's parent dir has many subdirs
+        dirinfo = self.get_raw_dirinfo(directory_id)
+        if dirinfo is not None:
+            parentdir_id = dirinfo.get('parent')
+            if parentdir_id is not None:
+                parentdiritems = self.get_raw_dir(parentdir_id)
+                if parentdiritems is not None:
+                    diritem = dict((d['id'], d) for d in parentdiritems).get(directory_id)
+                    return diritem.get('coverArt')
+                else:
+                    return None
+            else:
+                return None
         else:
             return None
