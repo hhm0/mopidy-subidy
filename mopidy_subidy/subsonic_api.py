@@ -2,7 +2,7 @@ from urlparse import urlparse
 import libsonic
 import logging
 import itertools
-from mopidy.models import Track, Album, Artist, Playlist, Ref, SearchResult
+from mopidy.models import Track, Album, Artist, Playlist, Ref, SearchResult, Image
 from mopidy_subidy import uri
 
 logger = logging.getLogger(__name__)
@@ -45,6 +45,14 @@ class SubsonicApi():
     def get_censored_song_stream_uri(self, song_id):
         template = '%s/stream.view?id=%s&u=******&p=******&c=mopidy&v=1.14'
         return template % (self.url, song_id)
+
+    def get_coverart_image_uri(self, aid):
+        template = '%s/getCoverArt.view?id=%s&u=%s&p=%s&c=mopidy&v=1.14'
+        return template % (self.url, aid, self.username, self.password)
+
+    def get_censored_coverart_image_uri(self, aid):
+        template = '%s/getCoverArt.view?id=%s&u=******&p=******&c=mopidy&v=1.14'
+        return template % (self.url, aid)
 
     def find_raw(self, query, exclude_artists=False, exclude_albums=False, exclude_songs=False):
         try:
@@ -120,6 +128,11 @@ class SubsonicApi():
             return None
         return self.raw_artist_to_artist(response.get('artist')) if response.get('artist') is not None else None
 
+    def get_coverart_image_by_id(self, aid):
+        censored_url = self.get_censored_coverart_image_uri(aid)
+        logger.debug("Loading cover art from subsonic with url: '%s'" % censored_url)
+        return self.raw_imageuri_to_image(self.get_coverart_image_uri(aid))
+
     def get_raw_playlists(self):
         try:
             response = self.connection.getPlaylists()
@@ -160,8 +173,41 @@ class SubsonicApi():
             return directory.get('child')
         return None
 
+    def get_raw_dirinfo(self, parent_id):
+        try:
+            response = self.connection.getMusicDirectory(parent_id)
+        except Exception as e:
+            logger.warning('Connecting to subsonic failed when loading music directory.')
+            return None
+        if response.get('status') != RESPONSE_OK:
+            logger.warning('Got non-okay status code from subsonic: %s' % response.get('status'))
+            return None
+        return response.get('directory')
+
+    def get_raw_artist(self, artist_id):
+        try:
+            response = self.connection.getArtist(artist_id)
+        except Exception as e:
+            logger.warning('Connecting to subsonic failed when loading artist.')
+            return None
+        if response.get('status') != RESPONSE_OK:
+            logger.warning('Got non-okay status code from subsonic: %s' % response.get('status'))
+            return None
+        return response.get('artist')
+
     def get_raw_albums(self, artist_id):
         return self.get_raw_dir(artist_id)
+
+    def get_raw_album(self, album_id):
+        try:
+            response = self.connection.getAlbum(album_id)
+        except Exception as e:
+            logger.warning('Connecting to subsonic failed when loading album.')
+            return []
+        if response.get('status') != RESPONSE_OK:
+            logger.warning('Got non-okay status code from subsonic: %s' % response.get('status'))
+            return []
+        return response.get('album')
 
     def get_raw_songs(self, album_id):
         try:
@@ -176,6 +222,17 @@ class SubsonicApi():
         if songs is not None:
             return songs
         return []
+
+    def get_raw_song(self, song_id):
+        try:
+            response = self.connection.getSong(song_id)
+        except Exception as e:
+            logger.warning('Connecting to subsonic failed when loading song.')
+            return []
+        if response.get('status') != RESPONSE_OK:
+            logger.warning('Got non-okay status code from subsonic: %s' % response.get('status'))
+            return []
+        return response.get('song')
 
     def get_albums_as_refs(self, artist_id):
         return [self.raw_album_to_ref(album) for album in self.get_raw_albums(artist_id)]
@@ -296,3 +353,25 @@ class SubsonicApi():
         return Ref.playlist(
             uri=uri.get_playlist_uri(playlist.get('id')),
             name=playlist.get('name'))
+
+    def raw_imageuri_to_image(self, imageuri):
+        return Image(
+            uri=imageuri)
+
+    def coverart_item_id_by_song_id(self, song_id):
+        return self.get_raw_song(song_id).get('coverArt')
+
+    def coverart_item_id_by_album_id(self, album_id):
+        return self.get_raw_album(album_id).get('coverArt')
+
+    def coverart_item_id_by_artist_id(self, artist_id):
+        return self.get_raw_artist(artist_id).get('coverArt')
+
+    def coverart_item_id_by_directory_id(self, directory_id):
+        parentdir_id = self.get_raw_dirinfo(directory_id).get('parent')
+        if parentdir_id is not None:
+            parentdiritems = self.get_raw_dir(parentdir_id)
+            diritem = dict((d['id'], d) for d in parentdiritems).get(directory_id)
+            return diritem.get('coverArt')
+        else:
+            return None
