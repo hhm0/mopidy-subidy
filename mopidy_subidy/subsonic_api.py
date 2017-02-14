@@ -78,7 +78,6 @@ class SubsonicApi():
             albums=[self.raw_album_to_album(album) for album in result.get('album') or []],
             tracks=[self.raw_song_to_track(song) for song in result.get('song') or []])
 
-
     def get_raw_artists(self):
         try:
             response = self.connection.getIndexes()
@@ -203,10 +202,10 @@ class SubsonicApi():
             response = self.connection.getAlbum(album_id)
         except Exception as e:
             logger.warning('Connecting to subsonic failed when loading album.')
-            return []
+            return None
         if response.get('status') != RESPONSE_OK:
             logger.warning('Got non-okay status code from subsonic: %s' % response.get('status'))
-            return []
+            return None
         return response.get('album')
 
     def get_raw_songs(self, album_id):
@@ -217,10 +216,10 @@ class SubsonicApi():
             response = self.connection.getSong(song_id)
         except Exception as e:
             logger.warning('Connecting to subsonic failed when loading song.')
-            return []
+            return None
         if response.get('status') != RESPONSE_OK:
             logger.warning('Got non-okay status code from subsonic: %s' % response.get('status'))
-            return []
+            return None
         return response.get('song')
 
     def get_albums_as_refs(self, artist_id):
