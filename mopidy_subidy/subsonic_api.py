@@ -2,7 +2,11 @@ from urlparse import urlparse
 import libsonic
 import logging
 import itertools
+import base64
+import requests
 from mopidy.models import Track, Album, Artist, Playlist, Ref, SearchResult, Image
+from mopidy import httpclient
+import mopidy_subidy
 from mopidy_subidy import uri
 
 logger = logging.getLogger(__name__)
@@ -131,7 +135,17 @@ class SubsonicApi():
         censored_url = self.get_censored_coverart_image_uri(a_id)
         logger.debug("Loading cover art from subsonic with url: '%s'" % censored_url)
         url = self.get_coverart_image_uri(a_id)
-        return self.raw_imageuri_to_image(url)
+        headers = {'user-agent': httpclient.format_user_agent('{name}/{ver}'.format(name=mopidy_subidy.SubidyExtension.dist_name, ver=mopidy_subidy.__version__))}
+        proxies = dict(http=self.proxy_formatted, https=self.proxy_formatted)
+        try:
+            response = requests.get(url, headers=headers, proxies=proxies)
+            uri_type = response.headers.get('content-type', 'application/octet-stream')
+            b64_data = base64.b64encode(response.content)
+            data_uri = ''.join(('data:', uri_type, ';base64,', b64_data))
+        except Exception as e:
+            logger.warning('Connecting to subsonic failed when loading cover art image.')
+            return None
+        return self.raw_imageuri_to_image(data_uri)
 
     def get_raw_playlists(self):
         try:
