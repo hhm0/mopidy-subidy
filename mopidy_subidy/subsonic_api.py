@@ -414,16 +414,13 @@ class SubsonicApi():
     def coverart_item_id_by_directory_id(self, directory_id):
         # FIXME: may take long when directory_id's parent dir has many subdirs
         dirinfo = self.get_raw_dirinfo(directory_id)
-        if dirinfo is not None:
-            parentdir_id = dirinfo.get('parent')
-            if parentdir_id is not None:
-                parentdiritems = self.get_raw_dir(parentdir_id)
-                if parentdiritems is not None:
-                    diritem = dict((d['id'], d) for d in parentdiritems).get(directory_id)
-                    return diritem.get('coverArt')
-                else:
-                    return None
-            else:
-                return None
-        else:
+        if dirinfo is None:
             return None
+        parentdir_id = dirinfo.get('parent')
+        if parentdir_id is None:
+            return None
+        parentdiritems = self.get_raw_dir(parentdir_id)
+        if parentdiritems is None:
+            return None
+        diritem = dict((d['id'], d) for d in parentdiritems).get(directory_id)
+        return diritem.get('coverArt')
