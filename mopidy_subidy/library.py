@@ -28,7 +28,11 @@ class SubidyLibraryProvider(backend.LibraryProvider):
         return self.subsonic_api.get_diritems_as_refs(directory_id)
 
     def lookup_song(self, song_id):
-        return self.subsonic_api.get_song_by_id(song_id)
+        song = self.subsonic_api.get_song_by_id(song_id)
+        if song is None:
+            return []
+        else:
+            return [song]
 
     def lookup_album(self, album_id):
         return self.subsonic_api.get_songs_as_tracks(album_id)
@@ -54,7 +58,7 @@ class SubidyLibraryProvider(backend.LibraryProvider):
         if type == uri.DIRECTORY:
             return self.lookup_directory(uri.get_directory_id(lookup_uri))
         if type == uri.SONG:
-            return [self.lookup_song(uri.get_song_id(lookup_uri))]
+            return self.lookup_song(uri.get_song_id(lookup_uri))
         # TODO: uri.PLAYLIST
 
     def lookup(self, uri=None, uris=None):
@@ -72,19 +76,22 @@ class SubidyLibraryProvider(backend.LibraryProvider):
         if type == uri.ARTIST:
             artistid = uri.get_artist_id(lookup_uri)
             artist = self.subsonic_api.get_artist_by_id(artistid)
-            tracks = self.lookup_artist(artistid)
             if artist is not None:
+                tracks = self.lookup_artist(artistid)
                 return dict(artists=[artist], tracks=tracks)
         elif type == uri.ALBUM:
             albumid = uri.get_album_id(lookup_uri)
             album = self.subsonic_api.get_album_by_id(albumid)
-            tracks = self.lookup_album(albumid)
             if album is not None:
+                tracks = self.lookup_album(albumid)
                 return dict(albums=[album], tracks=tracks)
+        elif type == uri.DIRECTORY:
+            dirsongs =  self.lookup_directory(uri.get_directory_id(lookup_uri))
+            return dict(tracks=dirsongs)
         elif type == uri.SONG:
-            song = self.lookup_song(uri.get_song_id(lookup_uri))
-            if song is not None:
-                return dict(tracks=[song])
+            songlist = self.lookup_song(uri.get_song_id(lookup_uri))
+            return dict(tracks=songlist)
+        # TODO: playlist uri supporting
         return {}
 
     def search(self, query=None, uris=None, exact=False):
