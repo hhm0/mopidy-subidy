@@ -70,6 +70,17 @@ class SubsonicApi():
             albums=[self.raw_album_to_album(album) for album in result.get('album') or []],
             tracks=[self.raw_song_to_track(song) for song in result.get('song') or []])
 
+    def find_iter(self, query, exclude_artists=False, exclude_albums=False, exclude_songs=False):
+        result = self.find_raw(query)
+        if result is None:
+            return
+        for i in (self.raw_artist_to_artist(artist) for artist in result.get('artist') or ()):
+            yield (uri.ARTIST, i)
+        for i in (self.raw_album_to_album(album) for album in result.get('album') or ()):
+            yield (uri.ALBUM, i)
+        for i in (self.raw_song_to_track(song) for song in result.get('song') or ()):
+            yield (uri.SONG, i)
+
     def get_raw_rootdirs(self):
         try:
             response = self.connection.getIndexes()
