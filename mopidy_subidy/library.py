@@ -67,25 +67,29 @@ class SubidyLibraryProvider(backend.LibraryProvider):
     def refresh(self, uri):
         pass
 
-    def search_uri(self, query):
+    def search_uri(self, lookup_uri):
         type = uri.get_type(lookup_uri)
         if type == uri.ARTIST:
-            artist = self.lookup_artist(uri.get_artist_id(lookup_uri))
+            artistid = uri.get_artist_id(lookup_uri)
+            artist = self.subsonic_api.get_artist_by_id(artistid)
+            tracks = self.lookup_artist(artistid)
             if artist is not None:
-                return SearchResult(artists=[artist])
+                return dict(artists=[artist], tracks=tracks)
         elif type == uri.ALBUM:
-            album = self.lookup_album(uri.get_album_id(lookup_uri))
+            albumid = uri.get_album_id(lookup_uri)
+            album = self.subsonic_api.get_album_by_id(albumid)
+            tracks = self.lookup_album(albumid)
             if album is not None:
-                return SearchResult(albums=[album])
+                return dict(albums=[album], tracks=tracks)
         elif type == uri.SONG:
             song = self.lookup_song(uri.get_song_id(lookup_uri))
             if song is not None:
-                return SearchResult(tracks=[song])
-        return None
+                return dict(tracks=[song])
+        return {}
 
     def search(self, query=None, uris=None, exact=False):
         if 'uri' in query:
-            return self.search_uri(query.get('uri')[0])
+            return SearchResult(**self.search_uri(query.get('uri')[0]))
         if 'any' in query:
             return self.subsonic_api.find_as_search_result(query.get('any')[0])
 
