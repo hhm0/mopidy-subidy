@@ -77,8 +77,9 @@ class SubidyLibraryProvider(backend.LibraryProvider):
             artistid = uri.get_artist_id(lookup_uri)
             artist = self.subsonic_api.get_artist_by_id(artistid)
             if artist is not None:
+                albums = self.subsonic_api.get_albums_as_albums(artistid)
                 tracks = self.lookup_artist(artistid)
-                return dict(artists=[artist], tracks=tracks)
+                return dict(artists=[artist], albums=albums, tracks=tracks)
         elif type == uri.ALBUM:
             albumid = uri.get_album_id(lookup_uri)
             album = self.subsonic_api.get_album_by_id(albumid)
