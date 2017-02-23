@@ -33,7 +33,7 @@ class CoverartRequestHandler(tornado.web.RequestHandler):
             logger.warning('Connecting to subsonic failed when loading cover art image.')
 
 def factory(config, core):
-    subsonic_api = subsonic_api.get_subsonic_api_with_config(config)
+    sapi = subsonic_api.get_subsonic_api_with_config(config)
     return (
-        ('/cover_art', CoverartRequestHandler, dict(config=config, subsonic_api=subsonic_api)),
+        ('/cover_art', CoverartRequestHandler, dict(config=config, subsonic_api=sapi)),
     )
