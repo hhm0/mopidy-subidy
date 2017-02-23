@@ -5,7 +5,6 @@ import os
 import logging
 import tornado.web
 import tornado.gen
-import tornado.httpclient
 import requests
 from mopidy import httpclient
 from mopidy_subidy import subsonic_api
