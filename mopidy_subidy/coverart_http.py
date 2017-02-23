@@ -17,6 +17,7 @@ class CoverartRequestHandler(tornado.web.RequestHandler):
         self.proxy_formatted = httpclient.format_proxy(config['proxy'])
         self.subsonic_api = subsonic_api
 
+    @tornado.gen.coroutine
     def get(self):
         a_id = self.get_argument('id')
         useragent = httpclient.format_user_agent('{name}/{ver}'.format(name=mopidy_subidy.SubidyExtension.dist_name, ver=mopidy_subidy.__version__))
