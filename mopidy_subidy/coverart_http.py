@@ -27,7 +27,7 @@ class CoverartRequestHandler(tornado.web.RequestHandler):
         try:
             fetched = requests.get(url, headers={'user-agent': useragent}, proxies=proxies, stream=True)
             self.set_header('Content-Type', fetched.headers.get('content-type', 'application/octet-stream'))
-            for chunk in response.iter_content(chunk_size=8192):
+            for chunk in fetched.iter_content(chunk_size=8192):
                 self.write(chunk)
         except Exception as e:
             logger.warning('Connecting to subsonic failed when loading cover art image.')
