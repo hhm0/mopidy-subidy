@@ -140,14 +140,6 @@ class SubidyLibraryProvider(backend.LibraryProvider):
             return [artist.name for artist in search_result.artists]
 
     def search(self, query=None, uris=None, exact=False):
-        #if 'uri' in query:
-        #    return SearchResult(
-        #        **self.finds_to_dict(self.search_uri_iter(query.get('uri')[0])))
-        #if 'any' in query:
-        #    q = query.get('any')[0]
-        #    return SearchResult(
-        #        uri=uri.get_search_uri(q),
-        #        **self.finds_to_dict(self.subsonic_api.find_iter(q)))
         if 'artist' in query and 'album' in query and 'track_name' in query:
             return self.search_by_artist_album_and_track(query.get('artist')[0], query.get('album')[0], query.get('track_name')[0])
         if 'artist' in query and 'album' in query:
@@ -156,5 +148,13 @@ class SubidyLibraryProvider(backend.LibraryProvider):
             return self.subsonic_api.find_as_search_result(query.get('artist')[0])
         if 'any' in query:
             return self.subsonic_api.find_as_search_result(query.get('any')[0])
+        if 'uri' in query:
+            return SearchResult(
+                **self.finds_to_dict(self.search_uri_iter(query.get('uri')[0])))
+        if 'any' in query:
+            q = query.get('any')[0]
+            return SearchResult(
+                uri=uri.get_search_uri(q),
+                **self.finds_to_dict(self.subsonic_api.find_iter(q)))
         return SearchResult(artists=self.subsonic_api.get_artists_as_artists())
 
