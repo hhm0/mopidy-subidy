@@ -5,7 +5,7 @@ import os
 import logging
 import tornado.web
 import tornado.gen
-import requests
+import tornado.httpclient
 from mopidy import httpclient
 from mopidy_subidy import subsonic_api
 import mopidy_subidy
@@ -19,16 +19,16 @@ class CoverartRequestHandler(tornado.web.RequestHandler):
 
     def get(self):
         a_id = self.get_argument('id')
-        proxies = dict(http=self.proxy_formatted, https=self.proxy_formatted)
         useragent = httpclient.format_user_agent('{name}/{ver}'.format(name=mopidy_subidy.SubidyExtension.dist_name, ver=mopidy_subidy.__version__))
         censored_url = self.subsonic_api.get_censored_coverart_image_uri(a_id)
         logger.debug("Loading cover art from subsonic with url: '%s'" % censored_url)
         url = self.subsonic_api.get_coverart_image_uri(a_id)
         try:
-            fetched = requests.get(url, headers={'user-agent': useragent}, proxies=proxies, stream=True)
+            ahc = tornado.httpclient.AsyncHTTPClient()
+            fetched = yield ahc.fetch(url, user_agent=useragent)
             self.set_header('Content-Type', fetched.headers.get('content-type', 'application/octet-stream'))
-            for chunk in response.iter_content(chunk_size=8192):
-                self.write(chunk)
+            self.write(fetched.body)
+            self.finish()
         except Exception as e:
             logger.warning('Connecting to subsonic failed when loading cover art image.')
 
