@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 import os
 
 from mopidy import ext, config
+from mopidy_subidy import coverart_http
 
 __version__ = '0.1.0'
 
@@ -28,3 +29,7 @@ class SubidyExtension(ext.Extension):
     def setup(self, registry):
         from .backend import SubidyBackend
         registry.add('backend', SubidyBackend)
+        registry.add('http:app', {
+            'name': self.ext_name,
+            'factory': coverart_http.factory,
+        })

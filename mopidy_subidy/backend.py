@@ -5,13 +5,7 @@ import pykka
 class SubidyBackend(pykka.ThreadingActor, backend.Backend):
     def __init__(self, config, audio):
         super(SubidyBackend, self).__init__()
-        subidy_config = config['subidy']
-        self.subsonic_api = subsonic_api.SubsonicApi(
-            url=subidy_config['url'],
-            username=subidy_config['username'],
-            password=subidy_config['password'],
-            legacy_auth=subidy_config['legacy_auth'])
-        self.subsonic_api.proxy_formatted = httpclient.format_proxy(config['proxy'])
+        self.subsonic_api = subsonic_api.get_subsonic_api_with_config(config)
         self.library = library.SubidyLibraryProvider(backend=self)
         self.playback = playback.SubidyPlaybackProvider(audio=audio, backend=self)
         self.playlists = playlists.SubidyPlaylistsProvider(backend=self)

@@ -2,10 +2,9 @@ from urlparse import urlparse
 import libsonic
 import logging
 import itertools
-import base64
 import requests
+import urllib
 from mopidy.models import Track, Album, Artist, Playlist, Ref, SearchResult, Image
-from mopidy import httpclient
 import mopidy_subidy
 from mopidy_subidy import uri
 
@@ -18,6 +17,14 @@ UNKNOWN_ARTIST = u'Unknown Artist'
 MAX_SEARCH_RESULTS = 100
 
 ref_sort_key = lambda ref: ref.name
+
+def get_subsonic_api_with_config(config):
+    subidy_config = config['subidy']
+    return SubsonicApi(
+        url=subidy_config['url'],
+        username=subidy_config['username'],
+        password=subidy_config['password'],
+        legacy_auth=subidy_config['legacy_auth'])
 
 class SubsonicApi():
     def __init__(self, url, username, password, legacy_auth):
@@ -144,20 +151,7 @@ class SubsonicApi():
         return self.raw_artist_to_artist(response.get('artist')) if response.get('artist') is not None else None
 
     def get_coverart_image_by_id(self, a_id):
-        censored_url = self.get_censored_coverart_image_uri(a_id)
-        logger.debug("Loading cover art from subsonic with url: '%s'" % censored_url)
-        url = self.get_coverart_image_uri(a_id)
-        headers = {'user-agent': httpclient.format_user_agent('{name}/{ver}'.format(name=mopidy_subidy.SubidyExtension.dist_name, ver=mopidy_subidy.__version__))}
-        proxies = dict(http=self.proxy_formatted, https=self.proxy_formatted)
-        try:
-            response = requests.get(url, headers=headers, proxies=proxies)
-            uri_type = response.headers.get('content-type', 'application/octet-stream')
-            b64_data = base64.b64encode(response.content)
-            data_uri = ''.join(('data:', uri_type, ';base64,', b64_data))
-        except Exception as e:
-            logger.warning('Connecting to subsonic failed when loading cover art image.')
-            return None
-        return self.raw_imageuri_to_image(data_uri)
+        return self.raw_imageuri_to_image(''.join(('/', mopidy_subidy.SubidyExtension.ext_name, '/cover_art?id=', urllib.quote_plus(a_id))))
 
     def get_raw_playlists(self):
         try:
