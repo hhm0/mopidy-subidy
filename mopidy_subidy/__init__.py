@@ -5,7 +5,7 @@ import os
 from mopidy import ext, config
 from mopidy_subidy import coverart_http
 
-__version__ = '0.1.0'
+__version__ = '0.2.1'
 
 
 class SubidyExtension(ext.Extension):
