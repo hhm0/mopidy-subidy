@@ -45,14 +45,6 @@ class SubsonicApi():
         template = '%s/stream.view?id=%s&u=******&p=******&c=mopidy&v=1.14'
         return template % (self.url, song_id)
 
-    def get_coverart_image_uri(self, aid):
-        template = '%s/getCoverArt.view?id=%s&u=%s&p=%s&c=mopidy&v=1.14'
-        return template % (self.url, aid, self.username, self.password)
-
-    def get_censored_coverart_image_uri(self, aid):
-        template = '%s/getCoverArt.view?id=%s&u=******&p=******&c=mopidy&v=1.14'
-        return template % (self.url, aid)
-
     def find_raw(self, query, exclude_artists=False, exclude_albums=False, exclude_songs=False):
         try:
             response = self.connection.search2(
@@ -222,6 +214,14 @@ class SubsonicApi():
             logger.warning('Got non-okay status code from subsonic: %s' % response.get('status'))
             return None
         return response.get('song')
+
+    def get_raw_coverart_bin(self, art_item_id, size=None):
+        try:
+            response = self.connection.getCoverArt(art_item_id, size)
+        except Exception as e:
+            logger.warning('Connecting to subsonic failed when loading cover art.')
+            return None
+        return response
 
     def get_albums_as_refs(self, artist_id):
         return [self.raw_album_to_ref(album) for album in self.get_raw_albums(artist_id)]
