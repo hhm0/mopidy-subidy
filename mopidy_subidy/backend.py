@@ -1,5 +1,5 @@
 from mopidy_subidy import library, playback, playlists, subsonic_api
-from mopidy import backend
+from mopidy import backend, httpclient
 import pykka
 
 class SubidyBackend(pykka.ThreadingActor, backend.Backend):
