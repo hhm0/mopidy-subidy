@@ -2,7 +2,10 @@ from urlparse import urlparse
 import libsonic
 import logging
 import itertools
+import requests
+import urllib
 from mopidy.models import Track, Album, Artist, Playlist, Ref, SearchResult, Image
+import mopidy_subidy
 from mopidy_subidy import uri
 
 logger = logging.getLogger(__name__)
@@ -14,6 +17,14 @@ UNKNOWN_ARTIST = u'Unknown Artist'
 MAX_SEARCH_RESULTS = 100
 
 ref_sort_key = lambda ref: ref.name
+
+def get_subsonic_api_with_config(config):
+    subidy_config = config['subidy']
+    return SubsonicApi(
+        url=subidy_config['url'],
+        username=subidy_config['username'],
+        password=subidy_config['password'],
+        legacy_auth=subidy_config['legacy_auth'])
 
 class SubsonicApi():
     def __init__(self, url, username, password):
@@ -120,10 +131,7 @@ class SubsonicApi():
         return self.raw_artist_to_artist(response.get('artist')) if response.get('artist') is not None else None
 
     def get_coverart_image_by_id(self, a_id):
-        censored_url = self.get_censored_coverart_image_uri(a_id)
-        logger.debug("Loading cover art from subsonic with url: '%s'" % censored_url)
-        url = self.get_coverart_image_uri(a_id)
-        return self.raw_imageuri_to_image(url)
+        return self.raw_imageuri_to_image(''.join(('/', mopidy_subidy.SubidyExtension.ext_name, '/cover_art?id=', urllib.quote_plus(a_id))))
 
     def get_raw_playlists(self):
         try:
