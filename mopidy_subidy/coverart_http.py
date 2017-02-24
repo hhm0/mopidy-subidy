@@ -6,17 +6,22 @@ import logging
 import tornado.web
 import tornado.gen
 import requests
+import trequests
+import tornalet
 from mopidy import httpclient
 from mopidy_subidy import subsonic_api
 import mopidy_subidy
 
 logger = logging.getLogger(__name__)
 
+trequests.setup_session()
+
 class CoverartRequestHandler(tornado.web.RequestHandler):
     def initialize(self, config, subsonic_api):
         self.proxy_formatted = httpclient.format_proxy(config['proxy'])
         self.subsonic_api = subsonic_api
 
+    @tornalet.tornalet
     def get(self):
         a_id = self.get_argument('id')
         proxies = dict(http=self.proxy_formatted, https=self.proxy_formatted)
