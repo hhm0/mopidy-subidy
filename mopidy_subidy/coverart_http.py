@@ -26,6 +26,7 @@ class CoverartRequestHandler(tornado.web.RequestHandler):
             # fetch cover art and proxy it
         except Exception as e:
             logger.warning('Connecting to subsonic failed when loading cover art image.')
+            raise tornado.web.HTTPError()
 
 def factory(config, core):
     sapi = subsonic_api.get_subsonic_api_with_config(config)
