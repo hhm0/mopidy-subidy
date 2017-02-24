@@ -12,6 +12,7 @@ enabled=True
 url=https://path.to/your/subsonic/server
 username=subsonic_username
 password=your_secret_password
+base_uri=(optional; set this when mopidy is behind an HTTP reverse proxy; example "/mopidy_subpath/")
 ```
 
 ## State of this plugin
