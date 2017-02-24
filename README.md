@@ -13,6 +13,7 @@ url=https://path.to/your/subsonic/server
 username=subsonic_username
 password=your_secret_password
 base_uri=(optional; set this when mopidy is behind an HTTP reverse proxy; example "/mopidy_subpath/")
+legacy_auth=(optional; setting to yes may solve some connection errors)
 ```
 
 ## State of this plugin
