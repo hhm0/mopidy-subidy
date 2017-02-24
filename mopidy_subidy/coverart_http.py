@@ -23,7 +23,7 @@ class CoverartRequestHandler(tornado.web.RequestHandler):
             for chunk in iter(lambda: fetched.read(8192), ''):
                 self.write(chunk)
         else:
-            self.send_error()
+            raise tornado.web.HTTPError()
 
 def factory(config, core):
     sapi = subsonic_api.get_subsonic_api_with_config(config)

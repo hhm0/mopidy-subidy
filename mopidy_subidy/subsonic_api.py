@@ -20,11 +20,13 @@ ref_sort_key = lambda ref: ref.name
 
 def get_subsonic_api_with_config(config):
     subidy_config = config['subidy']
-    return SubsonicApi(
+    sapi = SubsonicApi(
         url=subidy_config['url'],
         username=subidy_config['username'],
         password=subidy_config['password'],
         legacy_auth=subidy_config['legacy_auth'])
+    sapi.mopidy_base_uri = subidy_config['base_uri']
+    return sapi
 
 class SubsonicApi():
     def __init__(self, url, username, password):
@@ -131,7 +133,7 @@ class SubsonicApi():
         return self.raw_artist_to_artist(response.get('artist')) if response.get('artist') is not None else None
 
     def get_coverart_image_by_id(self, a_id):
-        return self.raw_imageuri_to_image(''.join(('/', mopidy_subidy.SubidyExtension.ext_name, '/cover_art?id=', urllib.quote_plus(a_id))))
+        return self.raw_imageuri_to_image(''.join((self.mopidy_base_uri, mopidy_subidy.SubidyExtension.ext_name, '/cover_art?id=', urllib.quote_plus(a_id))))
 
     def get_raw_playlists(self):
         try:
