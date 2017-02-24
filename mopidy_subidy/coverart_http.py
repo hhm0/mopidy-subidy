@@ -18,6 +18,7 @@ class CoverartRequestHandler(tornado.web.RequestHandler):
         a_id = self.get_argument('id')
         fetched = self.subsonic_api.get_raw_coverart_bin(a_id)
         if fetched is not None:
+            # FIXME: this does not have the image's specific mimetype
             self.set_header('Content-Type', 'application/octet-stream')
             for chunk in iter(lambda: fetched.read(8192), ''):
                 self.write(chunk)
