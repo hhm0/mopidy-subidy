@@ -23,6 +23,7 @@ class SubidyExtension(ext.Extension):
         schema['url'] = config.String()
         schema['username'] = config.String()
         schema['password'] = config.Secret()
+        schema['base_uri'] = config.String()
         return schema
 
     def setup(self, registry):
