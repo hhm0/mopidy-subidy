@@ -4,7 +4,6 @@ import os
 
 import logging
 import tornado.web
-import tornado.gen
 import requests
 import trequests
 import tornalet
