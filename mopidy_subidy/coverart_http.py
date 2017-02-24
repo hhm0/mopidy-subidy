@@ -27,7 +27,7 @@ class CoverartRequestHandler(tornado.web.RequestHandler):
         try:
             ahc = tornado.httpclient.AsyncHTTPClient()
             fetched = yield ahc.fetch(url, user_agent=useragent)
-            self.set_header('Content-Type', fetched.headers.get('content-type', 'application/octet-stream'))
+            self.set_header('Content-Type', fetched.headers.get('Content-Type', 'application/octet-stream'))
             self.write(fetched.body)
             self.finish()
         except Exception as e:
