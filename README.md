@@ -12,6 +12,7 @@ enabled=True
 url=https://path.to/your/subsonic/server
 username=subsonic_username
 password=your_secret_password
+legacy_auth=(optional; setting to yes may solve some connection errors)
 base_uri=(optional; set this when mopidy is behind an HTTP reverse proxy; example "/mopidy_subpath/")
 ```
 
@@ -37,3 +38,4 @@ The following things are **not** supported:
 
 The following people contributed to this project:
  - Frederick Gnodtke
+ - hhm0
