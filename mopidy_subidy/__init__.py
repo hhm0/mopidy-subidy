@@ -23,6 +23,7 @@ class SubidyExtension(ext.Extension):
         schema['url'] = config.String()
         schema['username'] = config.String()
         schema['password'] = config.Secret()
+        schema['legacy_auth'] = config.Boolean(optional=True)
         schema['base_uri'] = config.String()
         return schema
 
