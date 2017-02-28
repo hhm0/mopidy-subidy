@@ -137,37 +137,16 @@ class SubsonicApi():
         return []
 
     def get_song_by_id(self, song_id):
-        try:
-            response = self.connection.getSong(song_id)
-        except Exception as e:
-            logger.warning('Connecting to subsonic failed when loading song by id.')
-            return None
-        if response.get('status') != RESPONSE_OK:
-            logger.warning('Got non-okay status code from subsonic: %s' % response.get('status'))
-            return None
-        return self.raw_song_to_track(response.get('song')) if response.get('song') is not None else None
+        song = self.get_raw_song(song_id)
+        return self.raw_song_to_track(song) if song is not None else None
 
     def get_album_by_id(self, album_id):
-        try:
-            response = self.connection.getAlbum(album_id)
-        except Exception as e:
-            logger.warning('Connecting to subsonic failed when loading album by id.')
-            return None
-        if response.get('status') != RESPONSE_OK:
-            logger.warning('Got non-okay status code from subsonic: %s' % response.get('status'))
-            return None
-        return self.raw_album_to_album(response.get('album')) if response.get('album') is not None else None
+        album = self.get_raw_album(album_id)
+        return self.raw_album_to_album(album) if album is not None else None
 
     def get_artist_by_id(self, artist_id):
-        try:
-            response = self.connection.getArtist(artist_id)
-        except Exception as e:
-            logger.warning('Connecting to subsonic failed when loading artist by id.')
-            return None
-        if response.get('status') != RESPONSE_OK:
-            logger.warning('Got non-okay status code from subsonic: %s' % response.get('status'))
-            return None
-        return self.raw_artist_to_artist(response.get('artist')) if response.get('artist') is not None else None
+        artist = self.get_raw_artist(artist_id)
+        return self.raw_artist_to_artist(artist) if artist is not None else None
 
     def get_coverart_image_by_id(self, a_id):
         return self.raw_imageuri_to_image(''.join((self.mopidy_base_uri, mopidy_subidy.SubidyExtension.ext_name, '/cover_art?id=', urllib.quote_plus(a_id))))
