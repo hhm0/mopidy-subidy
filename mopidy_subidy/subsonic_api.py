@@ -5,6 +5,7 @@ import itertools
 import requests
 import urllib
 from mopidy.models import Track, Album, Artist, Playlist, Ref, SearchResult, Image
+import re
 import mopidy_subidy
 from mopidy_subidy import uri
 
@@ -18,6 +19,8 @@ MAX_SEARCH_RESULTS = 100
 MAX_LIST_RESULTS = 500
 
 ref_sort_key = lambda ref: ref.name
+
+string_nums_nocase_sort_key = lambda s: tuple((int(i) if i.isdigit() else i.lower()) for i in re.split(r'(\d+)', s))
 
 def get_subsonic_api_with_config(config):
     subidy_config = config['subidy']
@@ -189,7 +192,7 @@ class SubsonicApi():
         directory = response.get('directory')
         if directory is not None:
             diritems = directory.get('child')
-            sorted_diritems = sorted(diritems, key=lambda a: (a['isDir'], (a['title'] if a['isDir'] else int(a['track']))))
+            sorted_diritems = sorted(diritems, key=lambda a: (a['isDir'], (string_nums_nocase_sort_key(a['title']) if a['isDir'] else int(a['track']))))
             return sorted_diritems
         return None
 
