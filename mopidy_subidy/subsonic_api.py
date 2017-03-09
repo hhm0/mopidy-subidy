@@ -229,7 +229,7 @@ class SubsonicApi():
             return []
         albums = response.get('artist').get('album')
         if albums is not None:
-            return albums
+            return sorted(albums, key=lambda album: string_nums_nocase_sort_key(album['name']))
         return []
 
     def get_raw_album(self, album_id):
