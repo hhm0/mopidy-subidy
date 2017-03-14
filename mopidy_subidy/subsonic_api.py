@@ -3,6 +3,7 @@ import libsonic
 import logging
 import itertools
 from mopidy.models import Track, Album, Artist, Playlist, Ref, SearchResult
+import re
 from mopidy_subidy import uri
 
 logger = logging.getLogger(__name__)
@@ -15,6 +16,8 @@ MAX_SEARCH_RESULTS = 100
 MAX_LIST_RESULTS = 500
 
 ref_sort_key = lambda ref: ref.name
+
+string_nums_nocase_sort_key = lambda s: [(int(i) if i.isdigit() else i.lower()) for i in re.split(r'(\d+)', s)]
 
 class SubsonicApi():
     def __init__(self, url, username, password, legacy_auth):
@@ -185,7 +188,9 @@ class SubsonicApi():
             return None
         directory = response.get('directory')
         if directory is not None:
-            return directory.get('child')
+            diritems = directory.get('child')
+            sorted_diritems = sorted(diritems, key=lambda a: (a['isDir'], (string_nums_nocase_sort_key(a['title']) if a['isDir'] else int(a['track']))))
+            return sorted_diritems
         return None
 
     def get_raw_albums(self, artist_id):
