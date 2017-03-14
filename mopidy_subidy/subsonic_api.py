@@ -7,6 +7,7 @@ import requests
 from mopidy.models import Track, Album, Artist, Playlist, Ref, SearchResult, Image
 from mopidy import httpclient
 import mopidy_subidy
+import re
 from mopidy_subidy import uri
 
 logger = logging.getLogger(__name__)
@@ -18,6 +19,24 @@ UNKNOWN_ARTIST = u'Unknown Artist'
 MAX_SEARCH_RESULTS = 100
 
 ref_sort_key = lambda ref: ref.name
+
+def string_nums_nocase_sort_key(s):
+    segments = []
+    for substr in re.split(r'(\d+)', s):
+        if substr.isdigit():
+            seg = int(substr)
+        else:
+            seg = substr.lower()
+        segments.append(seg)
+    return segments
+
+def diritem_sort_key(item):
+    isdir = item['isDir']
+    if isdir:
+        key = string_nums_nocase_sort_key(item['title'])
+    else:
+        key = int(item['track'])
+    return (isdir, key)
 
 class SubsonicApi():
     def __init__(self, url, username, password, legacy_auth):
@@ -164,7 +183,8 @@ class SubsonicApi():
             return None
         directory = response.get('directory')
         if directory is not None:
-            return directory.get('child')
+            diritems = directory.get('child')
+            return sorted(diritems, key=diritem_sort_key)
         return None
 
     def get_raw_dirinfo(self, parent_id):
