@@ -20,7 +20,7 @@ MAX_LIST_RESULTS = 500
 
 ref_sort_key = lambda ref: ref.name
 
-string_nums_nocase_sort_key = lambda s: tuple((int(i) if i.isdigit() else i.lower()) for i in re.split(r'(\d+)', s))
+string_nums_nocase_sort_key = lambda s: [(int(i) if i.isdigit() else i.lower()) for i in re.split(r'(\d+)', s)]
 
 def get_subsonic_api_with_config(config):
     subidy_config = config['subidy']
