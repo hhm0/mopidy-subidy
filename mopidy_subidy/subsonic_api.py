@@ -78,10 +78,10 @@ class SubsonicApi():
         di_params.update(c='mopidy')
         di_params.update(v=self.connection.apiVersion)
         if censor:
-            params.update(u='*****', p='*****')
+            di_params.update(u='*****', p='*****')
         else:
-            params.update(u=self.username, p=self.password)
-        return '{}/{}.view?{}'.format(self.url, view_name, urlencode(params))
+            di_params.update(u=self.username, p=self.password)
+        return '{}/{}.view?{}'.format(self.url, view_name, urlencode(di_params))
 
     def get_song_stream_uri(self, song_id):
         return self.get_subsonic_uri('stream', dict(id=song_id))
@@ -304,6 +304,17 @@ class SubsonicApi():
         if albums is not None:
             return albums
         return []
+
+    def get_raw_song(self, song_id):
+        try:
+            response = self.connection.getSong(song_id)
+        except Exception as e:
+            logger.warning('Connecting to subsonic failed when loading song.')
+            return None
+        if response.get('status') != RESPONSE_OK:
+            logger.warning('Got non-okay status code from subsonic: %s' % response.get('status'))
+            return None
+        return response.get('song')
 
     def get_albums_as_refs(self, artist_id=None):
         albums = (self.get_raw_album_list('alphabeticalByName') if artist_id is None else self.get_raw_albums(artist_id))
