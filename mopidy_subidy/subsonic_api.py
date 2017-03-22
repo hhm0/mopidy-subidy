@@ -16,6 +16,7 @@ UNKNOWN_SONG = u'Unknown Song'
 UNKNOWN_ALBUM = u'Unknown Album'
 UNKNOWN_ARTIST = u'Unknown Artist'
 MAX_SEARCH_RESULTS = 100
+MAX_LIST_RESULTS = 500
 
 ref_sort_key = lambda ref: ref.name
 
@@ -34,7 +35,7 @@ def diritem_sort_key(item):
     if isdir:
         key = string_nums_nocase_sort_key(item['title'])
     else:
-        key = int(item['track'])
+        key = int(item.get('track', 1))
     return (isdir, key)
 
 def get_subsonic_api_with_config(config):
@@ -105,9 +106,25 @@ class SubsonicApi():
 
     def get_raw_artists(self):
         try:
-            response = self.connection.getIndexes()
+            response = self.connection.getArtists()
         except Exception as e:
             logger.warning('Connecting to subsonic failed when loading list of artists.')
+            return []
+        if response.get('status') != RESPONSE_OK:
+            logger.warning('Got non-okay status code from subsonic: %s' % response.get('status'))
+            return []
+        letters = response.get('artists').get('index')
+        if letters is not None:
+            artists = [artist for letter in letters for artist in letter.get('artist') or []]
+            return artists
+        logger.warning('Subsonic does not seem to have any artists in it\'s library.')
+        return []
+
+    def get_raw_rootdirs(self):
+        try:
+            response = self.connection.getIndexes()
+        except Exception as e:
+            logger.warning('Connecting to subsonic failed when loading list of rootdirs.')
             return []
         if response.get('status') != RESPONSE_OK:
             logger.warning('Got non-okay status code from subsonic: %s' % response.get('status'))
@@ -116,7 +133,7 @@ class SubsonicApi():
         if letters is not None:
             artists = [artist for letter in letters for artist in letter.get('artist') or []]
             return artists
-        logger.warning('Subsonic does not seem to have any artists in it\'s library.')
+        logger.warning('Subsonic does not seem to have any rootdirs in its library.')
         return []
 
     def get_song_by_id(self, song_id):
@@ -198,7 +215,18 @@ class SubsonicApi():
         return response.get('artist')
 
     def get_raw_albums(self, artist_id):
-        return self.get_raw_dir(artist_id)
+        try:
+            response = self.connection.getArtist(artist_id)
+        except Exception as e:
+            logger.warning('Connecting to subsonic failed when loading list of albums.')
+            return []
+        if response.get('status') != RESPONSE_OK:
+            logger.warning('Got non-okay status code from subsonic: %s' % response.get('status'))
+            return []
+        albums = response.get('artist').get('album')
+        if albums is not None:
+            return sorted(albums, key=lambda album: string_nums_nocase_sort_key(album['name']))
+        return []
 
     def get_raw_album(self, album_id):
         try:
@@ -212,7 +240,32 @@ class SubsonicApi():
         return response.get('album')
 
     def get_raw_songs(self, album_id):
-        return self.get_raw_dir(album_id)
+        try:
+            response = self.connection.getAlbum(album_id)
+        except Exception as e:
+            logger.warning('Connecting to subsonic failed when loading list of songs in album.')
+            return []
+        if response.get('status') != RESPONSE_OK:
+            logger.warning('Got non-okay status code from subsonic: %s' % response.get('status'))
+            return []
+        songs = response.get('album').get('song')
+        if songs is not None:
+            return songs
+        return []
+
+    def get_raw_album_list(self, ltype, size=MAX_LIST_RESULTS):
+        try:
+            response = self.connection.getAlbumList2(ltype=ltype, size=size)
+        except Exception as e:
+            logger.warning('Connecting to subsonic failed when loading album list.')
+            return []
+        if response.get('status') != RESPONSE_OK:
+            logger.warning('Got non-okay status code from subsonic: %s' % response.get('status'))
+            return []
+        albums = response.get('albumList2').get('album')
+        if albums is not None:
+            return albums
+        return []
 
     def get_raw_song(self, song_id):
         try:
@@ -233,8 +286,9 @@ class SubsonicApi():
             return None
         return response
 
-    def get_albums_as_refs(self, artist_id):
-        return [self.raw_album_to_ref(album) for album in self.get_raw_albums(artist_id)]
+    def get_albums_as_refs(self, artist_id=None):
+        albums = (self.get_raw_album_list('alphabeticalByName') if artist_id is None else self.get_raw_albums(artist_id))
+        return [self.raw_album_to_ref(album) for album in albums]
 
     def get_albums_as_albums(self, artist_id):
         return [self.raw_album_to_album(album) for album in self.get_raw_albums(artist_id)]
@@ -247,6 +301,12 @@ class SubsonicApi():
 
     def get_artists_as_refs(self):
         return [self.raw_artist_to_ref(artist) for artist in self.get_raw_artists()]
+
+    def get_rootdirs_as_refs(self):
+        return [self.raw_directory_to_ref(rootdir) for rootdir in self.get_raw_rootdirs()]
+
+    def get_diritems_as_refs(self, directory_id):
+        return [(self.raw_directory_to_ref(diritem) if diritem.get('isDir') else self.raw_song_to_ref(diritem)) for diritem in self.get_raw_dir(directory_id)]
 
     def get_artists_as_artists(self):
         return [self.raw_artist_to_artist(artist) for artist in self.get_raw_artists()]
@@ -308,6 +368,13 @@ class SubsonicApi():
             artists=[Artist(
                 name=album.get('artist'),
                 uri=uri.get_artist_uri(album.get('artistId')))])
+
+    def raw_directory_to_ref(self, directory):
+        if directory is None:
+            return None
+        return Ref.directory(
+            name=directory.get('title') or directory.get('name'),
+            uri=uri.get_directory_uri(directory.get('id')))
 
     def raw_artist_to_ref(self, artist):
         if artist is None:
