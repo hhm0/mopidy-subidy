@@ -36,7 +36,7 @@ def diritem_sort_key(item):
     if isdir:
         key = string_nums_nocase_sort_key(item['title'])
     else:
-        key = int(item['track'])
+        key = int(item.get('track', 1))
     return (isdir, key)
 
 def get_subsonic_api_with_config(config):
