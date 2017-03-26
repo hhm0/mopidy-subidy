@@ -90,12 +90,10 @@ class SubsonicApi():
         return self.get_subsonic_uri('stream', dict(id=song_id), True)
 
     def get_coverart_image_uri(self, aid):
-        template = '%s/getCoverArt.view?id=%s&u=%s&p=%s&c=mopidy&v=1.14'
-        return template % (self.url, aid, self.username, self.password)
+        return self.get_subsonic_uri('getCoverArt', dict(id=aid))
 
     def get_censored_coverart_image_uri(self, aid):
-        template = '%s/getCoverArt.view?id=%s&u=******&p=******&c=mopidy&v=1.14'
-        return template % (self.url, aid)
+        return self.get_subsonic_uri('getCoverArt', dict(id=aid), True)
 
     def find_raw(self, query, exclude_artists=False, exclude_albums=False, exclude_songs=False):
         try:
