@@ -78,7 +78,7 @@ class SubsonicApi():
 
     def find_raw(self, query, exclude_artists=False, exclude_albums=False, exclude_songs=False):
         try:
-            response = self.connection.search2(
+            response = self.connection.search3(
                 query.encode('utf-8'),
                 MAX_SEARCH_RESULTS if not exclude_artists else 0, 0,
                 MAX_SEARCH_RESULTS if not exclude_albums else 0, 0,
