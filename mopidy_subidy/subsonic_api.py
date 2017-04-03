@@ -159,7 +159,7 @@ class SubsonicApi():
         return self.raw_artist_to_artist(artist) if artist is not None else None
 
     def get_coverart_image_by_id(self, a_id):
-        return self.raw_imageuri_to_image(''.join((self.mopidy_base_uri, ('' if mopidy_base_uri.endswith("/") else '/'), mopidy_subidy.SubidyExtension.ext_name, '/cover_art?id=', urllib.quote_plus(a_id))))
+        return self.raw_imageuri_to_image(''.join((self.mopidy_base_uri, ('' if self.mopidy_base_uri.endswith("/") else '/'), mopidy_subidy.SubidyExtension.ext_name, '/cover_art?id=', urllib.quote_plus(a_id))))
 
     def get_raw_playlists(self):
         try:
