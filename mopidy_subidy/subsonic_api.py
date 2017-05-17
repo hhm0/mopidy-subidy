@@ -89,7 +89,7 @@ class SubsonicApi():
         if response.get('status') != RESPONSE_OK:
             logger.warning('Got non-okay status code from subsonic: %s' % response.get('status'))
             return None
-        return response.get('searchResult2')
+        return response.get('searchResult3')
 
     def find_as_search_result(self, query, exclude_artists=False, exclude_albums=False, exclude_songs=False):
         result = self.find_raw(query)
