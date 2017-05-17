@@ -95,9 +95,17 @@ class SubsonicApi():
     def get_censored_coverart_image_uri(self, aid):
         return self.get_subsonic_uri('getCoverArt', dict(id=aid), True)
 
-    def find_raw(self, query, exclude_artists=False, exclude_albums=False, exclude_songs=False):
+    def find_raw(self, query, exclude_artists=False, exclude_albums=False, exclude_songs=False, id3=False):
         try:
-            response = self.connection.search3(
+            search_methods = dict(
+                folders = dict(fn=self.connection.search2, tag="searchResult2"),
+                id3 = dict(fn=self.connection.search3, tag="searchResult3"),
+            )
+            if id3:
+                search_method = search_methods["id3"]
+            else:
+                search_method = search_methods["folders"]
+            response = search_method["fn"](
                 query.encode('utf-8'),
                 MAX_SEARCH_RESULTS if not exclude_artists else 0, 0,
                 MAX_SEARCH_RESULTS if not exclude_albums else 0, 0,
@@ -108,17 +116,36 @@ class SubsonicApi():
         if response.get('status') != RESPONSE_OK:
             logger.warning('Got non-okay status code from subsonic: %s' % response.get('status'))
             return None
-        return response.get('searchResult2')
+        return response.get(search_method["tag"])
 
     def find_as_search_result(self, query, exclude_artists=False, exclude_albums=False, exclude_songs=False):
-        result = self.find_raw(query)
-        if result is None:
+        result_folders = self.find_raw(query, exclude_artists=exclude_artists, exclude_albums=exclude_albums, exclude_songs=True)
+        result_id3 = self.find_raw(query, exclude_artists=exclude_artists, exclude_albums=exclude_albums, exclude_songs=exclude_songs, id3=True)
+        if result_folders is None:
+            result_folders = dict()
+        if result_id3 is None:
             return None
+        artists_map = {}
+        albums_map = {}
+        for artist in result_folders.get('artist') or []:
+            artists_map[artist.get('name')] = [artist, False]
+        for artist in result_id3.get('artist') or []:
+            artists_map[artist.get('name')] = [artist, True]
+        for album in result_folders.get('album') or []:
+            albums_map[(album.get('artist'), album.get('title'))] = [album, False]
+        for album in result_id3.get('album') or []:
+            albums_map[(album.get('artist'), album.get('name'))] = [album, True]
+        out_artists = []
+        out_albums = []
+        for artist_obj in artists_map.viewvalues():
+            out_artists.append(self.raw_artist_to_artist(artist_obj[0]) if artist_obj[1] else self.raw_directory_to_artist(artist_obj[0]))
+        for album_obj in albums_map.viewvalues():
+            out_albums.append(self.raw_album_to_album(album_obj[0]) if album_obj[1] else self.raw_directory_to_album(album_obj[0]))
         return SearchResult(
-            uri=uri.get_search_uri(query),
-            artists=[self.raw_artist_to_artist(artist) for artist in result.get('artist') or []],
-            albums=[self.raw_album_to_album(album) for album in result.get('album') or []],
-            tracks=[self.raw_song_to_track(song) for song in result.get('song') or []])
+            uri=uri.get_search_uri(query), # FIXME: include api parameters in url somehow maybe?
+            artists=out_artists,
+            albums=out_albums,
+            tracks=[self.raw_song_to_track(song) for song in (result_id3.get('song') or [])])
 
     def find_iter(self, query, exclude_artists=False, exclude_albums=False, exclude_songs=False):
         result = self.find_raw(query)
@@ -424,6 +451,23 @@ class SubsonicApi():
         return Ref.directory(
             name=directory.get('title') or directory.get('name'),
             uri=uri.get_directory_uri(directory.get('id')))
+
+    def raw_directory_to_artist(self, directory):
+        if directory is None:
+            return None
+        return Artist(
+            name=directory.get('name'),
+            uri=uri.get_directory_uri(directory.get("id")))
+
+    def raw_directory_to_album(self, directory):
+        if directory is None:
+            return None
+        return Album(
+            name=directory.get('title'),
+            uri=uri.get_directory_uri(directory.get("id")),
+            artists=[Artist(
+                name=directory.get('artist'),
+                uri=uri.get_directory_uri(directory.get('parent')))])
 
     def raw_artist_to_ref(self, artist):
         if artist is None:
