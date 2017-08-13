@@ -45,13 +45,14 @@ def get_subsonic_api_with_config(config):
         url=subidy_config['url'],
         username=subidy_config['username'],
         password=subidy_config['password'],
+        app_name=mopidy_subidy.SubidyExtension.dist_name,
         legacy_auth=subidy_config['legacy_auth'],
         api_version=subidy_config['api_version'])
     sapi.mopidy_base_uri = subidy_config['uri_prefix']
     return sapi
 
 class SubsonicApi():
-    def __init__(self, url, username, password, legacy_auth, api_version):
+    def __init__(self, url, username, password, app_name, legacy_auth, api_version):
         parsed = urlparse(url)
         self.port = parsed.port if parsed.port else \
             443 if parsed.scheme == 'https' else 80
@@ -62,6 +63,7 @@ class SubsonicApi():
             password,
             self.port,
             parsed.path + '/rest',
+            appName=app_name,
             legacyAuth=legacy_auth,
             apiVersion=api_version)
         self.url = url + '/rest'
@@ -77,7 +79,7 @@ class SubsonicApi():
     def get_subsonic_uri(self, view_name, params, censor=False):
         di_params = {}
         di_params.update(params)
-        di_params.update(c='mopidy')
+        di_params.update(c=self.connection.appName)
         di_params.update(v=self.connection.apiVersion)
         if censor:
             di_params.update(u='*****', p='*****')
