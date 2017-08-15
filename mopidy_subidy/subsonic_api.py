@@ -37,7 +37,7 @@ def diritem_sort_key(item):
     return (isdir, key)
 
 class SubsonicApi():
-    def __init__(self, url, username, password, legacy_auth, api_version):
+    def __init__(self, url, username, password, app_name, legacy_auth, api_version):
         parsed = urlparse(url)
         self.port = parsed.port if parsed.port else \
             443 if parsed.scheme == 'https' else 80
@@ -48,6 +48,7 @@ class SubsonicApi():
             password,
             self.port,
             parsed.path + '/rest',
+            appName=app_name,
             legacyAuth=legacy_auth,
             apiVersion=api_version)
         self.url = url + '/rest'
@@ -63,7 +64,7 @@ class SubsonicApi():
     def get_subsonic_uri(self, view_name, params, censor=False):
         di_params = {}
         di_params.update(params)
-        di_params.update(c='mopidy')
+        di_params.update(c=self.connection.appName)
         di_params.update(v=self.connection.apiVersion)
         if censor:
             di_params.update(u='*****', p='*****')
@@ -101,6 +102,39 @@ class SubsonicApi():
             artists=[self.raw_artist_to_artist(artist) for artist in result.get('artist') or []],
             albums=[self.raw_album_to_album(album) for album in result.get('album') or []],
             tracks=[self.raw_song_to_track(song) for song in result.get('song') or []])
+
+    def create_playlist_raw(self, name):
+        try:
+            response = self.connection.createPlaylist(name=name)
+        except Exception as e:
+            logger.warning('Connecting to subsonic failed when creating playlist.')
+            return None
+        if response.get('status') != RESPONSE_OK:
+            logger.warning('Got non-okay status code from subsonic: %s' % response.get('status'))
+            return None
+        return response
+
+    def delete_playlist_raw(self, playlist_id):
+        try:
+            response = self.connection.deletePlaylist(playlist_id)
+        except Exception as e:
+            logger.warning('Connecting to subsonic failed when deleting playlist.')
+            return None
+        if response.get('status') != RESPONSE_OK:
+            logger.warning('Got non-okay status code from subsonic: %s' % response.get('status'))
+            return None
+        return response
+
+    def save_playlist_raw(self, playlist_id, song_ids):
+        try:
+            response = self.connection.createPlaylist(playlist_id, songIds=song_ids)
+        except Exception as e:
+            logger.warning('Connecting to subsonic failed when creating playlist.')
+            return None
+        if response.get('status') != RESPONSE_OK:
+            logger.warning('Got non-okay status code from subsonic: %s' % response.get('status'))
+            return None
+        return response
 
     def get_raw_artists(self):
         try:
